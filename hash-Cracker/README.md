@@ -3,9 +3,9 @@
 - A dictionary-based password hash cracker built in Python.
 
 # What it does
-- Takes a hashed password and a wordlist as input
-- Hashes each word in the wordlist and compares it to the target
-- Reports the plaintext password if found
+- Takes a hashed password and a wordlist as input.
+- Hashes each word in the wordlist and compares it to the target.
+- Reports the plaintext password if found.
 
 # How to run
 ```bash
