@@ -26,6 +26,19 @@ passwords using a wordlist.
 
 ---
 
+### 3. Log Analyser
+A web server log parser that automatically detects suspicious activity —
+brute force attempts, directory scanning, and abnormal request volumes.
+
+**Features:**
+- Detects brute force attacks (repeated 401s from same IP)
+- Detects directory scanning (repeated 404s from same IP)
+- Flags high request volume from single IPs
+- Status code breakdown and top path analysis
+- Optional report output to .txt file
+
+---
+
 ## Disclaimer
 These tools are built for educational purposes and authorized testing only.
 Never run them against systems you dont own or have explicit permission to test.
