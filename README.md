@@ -1,6 +1,6 @@
 # Cybersecurity Projects
 
-Personal collection of security tools built from scratch while learning
+Personal collection of security tools built from scratch while learning.
 penetration testing. Everything here is written in Python.
 
 ---
