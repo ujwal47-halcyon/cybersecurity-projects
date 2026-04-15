@@ -15,7 +15,7 @@ services, grabs banners and saves scan reports.
 - Multithreaded scanning (100 threads by default — scans 1024 ports in ~6 seconds)
 - Service detection for common ports (SSH, HTTP, SMB, MySQL etc)
 - Banner grabbing to identify service versions
-- Optional report output to .txt file
+- Optional report output to .txt file.
 
 
 ---
