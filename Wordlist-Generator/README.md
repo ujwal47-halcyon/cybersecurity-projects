@@ -20,7 +20,7 @@ A fast, interactive, terminal-based wordlist generator built for penetration tes
 - **Deity/god name patterns** — ram, shiva, krishna, ganesh, durga, hanuman and more
 - **Configurable min/max password length** — filter output to exactly what you need
 - **Spinner with live word count** during generation
-- **Auto-saves** to `./wordlists/<name>_<timestamp>.txt` — no duplicates, no fluff
+- **Auto-saves** to `./wordlists/<name>_<timestamp>.txt` — no duplicates, no fluff.
 
 ---
 
