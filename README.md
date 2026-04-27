@@ -95,7 +95,7 @@ hashcat -m 0 hashes.txt wordlists/rahul_20260422_143012.txt
 
 ## Disclaimer
 These tools are built for educational purposes and authorized testing only.
-Never run them against systems you dont own or have explicit permission to test
+Never run them against systems you dont own or have explicit permission to test.
 
 ---
 
