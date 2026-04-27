@@ -39,6 +39,60 @@ brute force attempts, directory scanning, and abnormal request volumes.
 
 ---
 
+---
+
+## WordGen — Targeted Wordlist Generator
+
+![Python](https://img.shields.io/badge/Python-3.x-blue?style=flat-square&logo=python)
+![Platform](https://img.shields.io/badge/Platform-Kali%20Linux-557C94?style=flat-square&logo=linux)
+
+A fast, interactive, terminal-based wordlist generator for penetration testers. Takes personal info about a target and generates a highly targeted wordlist using real-world password patterns — including patterns commonly used in India.
+
+> For authorized penetration testing and CTF use only.
+
+### Features
+
+- Interactive terminal UI with tab completion and color output
+- Short command aliases — `-g` to generate, `-h` for help, `Ctrl+C` to exit
+- **Indian password format engine** — `Name@123`, `Rahul#786`, `Shiva@108` and more
+- Case variants, leet speak, date formats, year sweeps, cross-combinations
+- Deity/god name patterns — ram, shiva, krishna, ganesh, durga, hanuman...
+- Configurable min/max password length filter
+- Live spinner with word count during generation
+- Auto-saves to `./wordlists/<name>_<timestamp>.txt` — deduped, clean output
+
+### Usage
+
+```bash
+python3 wordgen.py
+```
+
+```
+wordgen> -g        # Full interactive generation
+wordgen> -q        # Quick generation
+wordgen> -h        # Help
+wordgen> -c        # Show session config
+Ctrl+C             # Exit anytime
+```
+
+### Output
+
+```
+wordlists/
+└── rahul_20260422_143012.txt    # plain text, one password per line
+```
+
+Ready to pipe into Hydra, Hashcat, or any other tool.
+
+```bash
+hydra -l admin -P wordlists/rahul_20260422_143012.txt ssh://192.168.1.1
+hashcat -m 0 hashes.txt wordlists/rahul_20260422_143012.txt
+```
+
+**[→ View Tool](./wordgen/wordgen.py)**
+
+---
+
 ## Disclaimer
 These tools are built for educational purposes and authorized testing only.
 Never run them against systems you dont own or have explicit permission to test
