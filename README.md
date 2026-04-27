@@ -89,7 +89,7 @@ hydra -l admin -P wordlists/rahul_20260422_143012.txt ssh://192.168.1.1
 hashcat -m 0 hashes.txt wordlists/rahul_20260422_143012.txt
 ```
 
-**[→ View Tool](./wordgen/wordgen.py)**
+**[→ View Tool](https://github.com/ujwal47-halcyon/cybersecurity-projects/tree/main/Wordlist-Generator)**
 
 ---
 
