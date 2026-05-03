@@ -1,4 +1,4 @@
-# WordGen — Targeted Wordlist Generator
+# WordGen — Targeted Wordlist Generator.
 
 ![Python](https://img.shields.io/badge/Python-3.x-blue?style=flat-square&logo=python)
 ![Platform](https://img.shields.io/badge/Platform-Kali%20Linux-557C94?style=flat-square&logo=linux)
