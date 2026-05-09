@@ -233,6 +233,238 @@ def date_variants(dob):
     variants.add(dob)
     return {v for v in variants if v}
 
+# ─────────────────────────── PATTERN GENERATOR ─────────────────────
+def generate_number_patterns():
+    """
+    Generate standalone number-only patterns commonly used in passwords.
+    Covers: all-same, sequential, birth years, dates, repeating blocks,
+    phone-style, lucky numbers, culturally common Indian numbers.
+    """
+    nums = set()
+
+    # ── All same digit: 111111, 222222, 000000 ────────────────────
+    for d in "0123456789":
+        for length in range(4, 9):
+            nums.add(d * length)
+
+    # ── Sequential ascending/descending ───────────────────────────
+    for start in range(0, 10):
+        for length in range(4, 10):
+            asc  = "".join(str((start + i) % 10) for i in range(length))
+            desc = "".join(str((start - i) % 10) for i in range(length))
+            nums.add(asc)
+            nums.add(desc)
+
+    # ── Birth years: 1970–2010 ─────────────────────────────────────
+    for y in range(1970, 2011):
+        nums.add(str(y))
+        nums.add(str(y)[2:])          # 99, 00, 01 ...
+
+    # ── Common date fragments ──────────────────────────────────────
+    # DDMM, MMDD, DDMMYY, MMDDYY
+    for d in range(1, 32):
+        for m in range(1, 13):
+            dd = f"{d:02d}"
+            mm = f"{m:02d}"
+            nums.update([dd+mm, mm+dd])
+    for y in range(70, 100):         # 70–99
+        for d in range(1, 32):
+            for m in range(1, 13):
+                nums.add(f"{d:02d}{m:02d}{y:02d}")
+                nums.add(f"{m:02d}{d:02d}{y:02d}")
+
+    # ── Repeating blocks: 12121212, 34343434, 123123 ──────────────
+    for block in ["12","23","34","45","56","67","78","89","90","01",
+                  "13","24","36","99","11","00","69","47","21"]:
+        for rep in range(2, 5):
+            nums.add(block * rep)
+
+    # ── Mirror numbers: 12344321, 56788765 ────────────────────────
+    for base in ["12", "123", "1234", "12345", "56", "567", "98", "987"]:
+        nums.add(base + base[::-1])
+        nums.add(base[::-1] + base)
+
+    # ── Phone-style patterns (10-digit structures) ─────────────────
+    phone_bases = [
+        "9999999999", "8888888888", "7777777777",
+        "9876543210", "0123456789", "9000000000",
+        "8000000000", "7000000000", "9876000000",
+    ]
+    nums.update(phone_bases)
+    # Last 4/6/8 of common phone structures
+    for tail in ["0000","1111","2222","3333","4321","1234","9999","0001","0007"]:
+        for prefix in ["98","99","90","88","87","77","70"]:
+            nums.add(prefix + tail)
+
+    # ── Culturally significant Indian numbers ─────────────────────
+    INDIAN_NUMBERS = [
+        "786",          # Islamic lucky number
+        "108",          # Hindu sacred number
+        "1008",         # Extended sacred
+        "007",          # Popular worldwide
+        "420",          # Slang — IPC section
+        "100",          # Police
+        "101",          # Common pattern
+        "143",          # I love you (pager code)
+        "1947",         # Indian independence
+        "1857",         # First war of independence
+        "2611",         # 26/11
+        "1526",         # Battle of Panipat
+        "2024", "2025", "2026",
+        "1234567890",
+        "0987654321",
+        "1122334455",
+        "9876543210",
+        "1111111111",
+        "0000000000",
+    ]
+    nums.update(INDIAN_NUMBERS)
+
+    # ── OTP / PIN style (4–6 digit all combos of common digits) ───
+    common_digits = ["0","1","2","3","4","5","6","7","8","9"]
+    # All 4-digit patterns with high frequency in real leaks
+    high_freq_4 = [
+        "0000","1111","2222","3333","4444","5555","6666","7777","8888","9999",
+        "1234","4321","1212","2121","1122","2211","1221","2112","6969","6996",
+        "1010","0101","2020","2002","1001","3003","4004","5005",
+        "1379","1397","3197","7913",        # diagonal keypad
+        "2468","8642","1357","7531",        # alternating
+        "1470","2580","3690",              # keypad columns
+        "0852","0258","1593","3571",
+        "0000","9999","1000","2000","5000",
+        "0007","0070","0700","7000",
+        "4200","0420","6900","0069",
+    ]
+    nums.update(high_freq_4)
+
+    # ── 6-digit common ─────────────────────────────────────────────
+    high_freq_6 = [
+        "123456","654321","111111","000000","123123",
+        "112233","123321","121212","123654","000001",
+        "159753","357159","147258","258369","369258",
+        "789456","456789","789123","321654","654123",
+        "100000","200000","500000","999999","888888",
+        "696969","123789","987123","112358",  # Fibonacci start
+    ]
+    nums.update(high_freq_6)
+
+    # ── 8-digit common ─────────────────────────────────────────────
+    high_freq_8 = [
+        "12345678","87654321","11111111","00000000",
+        "12341234","12344321","11223344","99999999",
+        "10101010","01010101","12121212","98989898",
+        "13579753","24682468","11001100","10001000",
+    ]
+    nums.update(high_freq_8)
+
+    return nums
+
+
+def generate_fixed_patterns():
+    """
+    Generate number/alphabet patterns people actually use in passwords.
+    Covers: repeat-stair, sequential, mirror, keyboard walks, alpha equivalents.
+    """
+    patterns = set()
+
+    # ── Staircase repeating: 1223334444, 1222333444455555 ──────────
+    # Each digit repeated n times: 1x1, 2x2, 3x3 ...
+    for length in range(4, 9):          # staircase depth
+        p = ""
+        for n in range(1, length + 1):
+            p += str(n % 10) * n
+        patterns.add(p)
+    # Variants: starting digit varies
+    for start in range(0, 5):
+        p = ""
+        for n in range(1, 6):
+            p += str((start + n - 1) % 10) * n
+        patterns.add(p)
+
+    # ── Uniform repeats: 1111, 2222, aaaa, 11111111 ───────────────
+    for ch in "0123456789abcdefghijklmnopqrstuvwxyz":
+        for rep in range(4, 9):
+            patterns.add(ch * rep)
+
+    # ── Sequential ascending: 1234, 12345, 123456, 1234567, 12345678
+    for start in range(0, 8):
+        for length in range(4, 9):
+            p = "".join(str((start + i) % 10) for i in range(length))
+            patterns.add(p)
+    # Descending: 9876, 987654, 9876543210
+    for start in range(9, 1, -1):
+        for length in range(4, 9):
+            p = "".join(str((start - i) % 10) for i in range(length))
+            patterns.add(p)
+
+    # ── Alphabet sequential: abcd, efgh, abcdef, xyzabc ──────────
+    alpha = "abcdefghijklmnopqrstuvwxyz"
+    for start in range(0, 23):
+        for length in range(4, 8):
+            p = "".join(alpha[(start + i) % 26] for i in range(length))
+            patterns.add(p)
+            patterns.add(p.upper())
+
+    # ── Mirror/palindrome: 12344321, abccba, 123321 ───────────────
+    for base in ["123", "1234", "12345", "abc", "abcd", "abcde",
+                 "321", "987", "xyz"]:
+        patterns.add(base + base[::-1])       # 123321
+        patterns.add(base[::-1] + base)       # 321123
+
+    # ── Interleaved repeats: 112233, 11223344, aabbcc ─────────────
+    for length in range(2, 6):
+        # Numbers: 112233445566
+        p_num = "".join(str(i % 10) * 2 for i in range(1, length + 3))
+        patterns.add(p_num)
+        # Alpha: aabbccdd
+        p_alp = "".join(alpha[i % 26] * 2 for i in range(length + 2))
+        patterns.add(p_alp)
+        patterns.add(p_alp.upper())
+
+    # ── Keyboard row walks ─────────────────────────────────────────
+    kb_rows = [
+        "qwertyuiop", "asdfghjkl", "zxcvbnm",
+        "qwerty", "asdfgh", "zxcvbn",
+        "1qaz2wsx", "1q2w3e4r", "1q2w3e",
+        "qazwsx", "qazwsxedc",
+        "poiuytrewq", "lkjhgfdsa",           # reversed rows
+    ]
+    for row in kb_rows:
+        for length in range(4, len(row) + 1):
+            patterns.add(row[:length])
+            patterns.add(row[:length].upper())
+            patterns.add(row[:length].capitalize())
+
+    # ── Mixed number+alpha staircase: a1b2c3, 1a2b3c ─────────────
+    for length in range(3, 7):
+        p1 = "".join(alpha[i % 26] + str((i + 1) % 10) for i in range(length))
+        p2 = "".join(str((i + 1) % 10) + alpha[i % 26] for i in range(length))
+        patterns.add(p1)
+        patterns.add(p2)
+        patterns.add(p1.upper())
+
+    # ── Common PIN-style blocks people append to names ────────────
+    PIN_BLOCKS = [
+        "0000", "1111", "2222", "3333", "4444", "5555",
+        "6666", "7777", "8888", "9999",
+        "1234", "4321", "0123", "1010", "2020",
+        "6969", "1122", "2211", "1221", "2112",
+        "1001", "2002", "3003",
+        "1379", "2580", "1357",  # diagonal keypad patterns
+        "1470", "2580", "3690",  # vertical keypad columns
+    ]
+    patterns.update(PIN_BLOCKS)
+
+    # ── Chunked repeats: 123123, 456456, abcabc ───────────────────
+    for chunk in ["123", "456", "789", "012", "321", "abc",
+                  "xyz", "qwe", "asd", "zxc"]:
+        patterns.add(chunk * 2)
+        patterns.add(chunk * 3)
+        patterns.add(chunk.upper() * 2)
+
+    return patterns
+
+
 # ─────────────────────────── CORE GENERATOR ────────────────────────
 COMMON_SUFFIXES = [
     "123", "1234", "12345", "123456",
@@ -458,6 +690,19 @@ def generate_wordlist(data, quick=False):
             tail = en[-4:] if len(en) >= 4 else en
             combined.add(nm + tail)
             combined.add(nm.capitalize() + tail)
+
+    # ── Number-only patterns ───────────────────────────────────────
+    combined.update(generate_number_patterns())
+
+    # ── Number & alphabet patterns ─────────────────────────────────
+    pattern_words = generate_fixed_patterns()
+    combined.update(pattern_words)
+    # Also combine patterns as suffixes on base names
+    short_patterns = [p for p in pattern_words if 3 <= len(p) <= 6][:120]
+    for nm in base_names[:60]:
+        for pat in short_patterns:
+            combined.add(nm + pat)
+            combined.add(nm.capitalize() + pat)
 
     # God/deity names common in Indian passwords
     DEITIES = ["ram", "shiv", "shiva", "krishna", "ganesh", "durga",
