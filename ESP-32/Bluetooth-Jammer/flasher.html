@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESP32 NRF24 Jammer — Web Flasher</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f8f9fb;--surface:#fff;--border:#e3e7ef;--border2:#d0d7e3;
+  --text:#111827;--sub:#4b5563;--muted:#9ca3af;
+  --accent:#2563eb;--accent-h:#1d4ed8;--accent-bg:#eff6ff;--accent-br:#bfdbfe;
+  --green:#16a34a;--green-bg:#f0fdf4;--green-br:#bbf7d0;
+  --yellow:#d97706;--yellow-bg:#fffbeb;--yellow-br:#fde68a;
+  --red:#dc2626;--red-bg:#fef2f2;--red-br:#fecaca;
+  --code-bg:#0f172a;--r:10px;
+  --shadow:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
+}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:15px;line-height:1.6}
+a{color:var(--accent)}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:#1e293b}
+::-webkit-scrollbar-thumb{background:#334155;border-radius:3px}
+
+/* TOPBAR */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 2rem;height:44px;display:flex;align-items:center;justify-content:space-between;font-size:12.5px;color:var(--sub);position:sticky;top:0;z-index:100}
+.topbar-l{display:flex;align-items:center;gap:8px;font-weight:500}
+.topbar-dot{width:7px;height:7px;border-radius:50%;background:var(--accent)}
+.badge{background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent-br);border-radius:20px;padding:2px 10px;font-size:11.5px;font-weight:500}
+.badge.green{background:var(--green-bg);color:var(--green);border-color:var(--green-br)}
+
+/* PAGE */
+.page{max-width:700px;margin:0 auto;padding:3.5rem 1.5rem 6rem}
+
+/* HERO */
+.hero{margin-bottom:2.5rem}
+.version-chip{display:inline-flex;align-items:center;gap:6px;background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent-br);border-radius:20px;padding:3px 12px;font-size:12px;font-weight:600;font-family:'JetBrains Mono',monospace;margin-bottom:16px}
+.hero h1{font-size:30px;font-weight:700;letter-spacing:-.5px;margin-bottom:10px;line-height:1.2}
+.hero h1 span{color:var(--accent)}
+.hero p{font-size:16px;color:var(--sub);line-height:1.65}
+
+/* CALLOUT */
+.callout{border-radius:var(--r);padding:13px 16px;display:flex;gap:11px;align-items:flex-start;margin-bottom:1rem;font-size:13.5px;line-height:1.55}
+.ci{font-size:12px}
+.callout.tip{background:var(--yellow-bg);border:1px solid var(--yellow-br);color:#78350f}
+.callout.warn{background:var(--red-bg);border:1px solid var(--red-br);color:#7f1d1d}
+.callout.info{background:var(--accent-bg);border:1px solid var(--accent-br);color:#1e3a8a}
+
+/* SECTION */
+.section{margin-bottom:2.5rem}
+.section-title{font-size:18px;font-weight:700;letter-spacing:-.3px;margin-bottom:1rem;display:flex;align-items:center;gap:10px}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* STEPS */
+.steps-list{display:flex;flex-direction:column;gap:10px}
+.step-item{display:flex;gap:14px;align-items:flex-start;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow)}
+.step-num{flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:2px}
+.step-t{font-size:14px;color:var(--sub);padding-top:4px}
+.step-t strong{color:var(--text)}
+.step-t a{font-weight:500}
+.ci{font-family:'JetBrains Mono',monospace;font-size:11.5px;background:#f1f5f9;border:1px solid var(--border2);padding:1px 6px;border-radius:4px;color:var(--accent)}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;margin-bottom:1rem}
+.card-body{padding:20px}
+
+/* MODE */
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
+@media(max-width:500px){.mode-grid{grid-template-columns:1fr}}
+.mode-opt{padding:13px 15px;border:2px solid var(--border);border-radius:var(--r);cursor:pointer;background:var(--surface);text-align:left;font-family:'Inter',sans-serif;transition:all .15s}
+.mode-opt:hover{border-color:var(--accent)}
+.mode-opt.active{border-color:var(--accent);background:var(--accent-bg)}
+.mode-opt .mt{display:block;font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:2px}
+.mode-opt.active .mt{color:var(--accent)}
+.mode-opt .md{display:block;font-size:12px;color:var(--muted)}
+
+/* SLIDERS */
+.adv-toggle{width:100%;background:none;border:none;border-top:1px solid var(--border);padding:11px 20px;font-family:'Inter',sans-serif;font-size:13px;color:var(--sub);cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .15s}
+.adv-toggle:hover{background:var(--bg)}
+.adv-body{display:none;border-top:1px solid var(--border)}
+.adv-body.open{display:block}
+.adv-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 24px;padding:16px 20px}
+@media(max-width:500px){.adv-grid{grid-template-columns:1fr}}
+.sl{margin-bottom:13px}.sl:last-child{margin-bottom:0}
+.sl-row{display:flex;justify-content:space-between;margin-bottom:7px;font-size:13px}
+.sl-name{color:var(--sub)}
+.sl-val{font-family:'JetBrains Mono',monospace;font-size:12px;background:#f1f5f9;border:1px solid var(--border2);padding:1px 7px;border-radius:4px;color:var(--text);min-width:46px;text-align:center}
+input[type=range]{width:100%;-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;background:var(--border2);outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;border-radius:50%;background:var(--accent);border:2px solid #fff;box-shadow:0 1px 4px rgba(37,99,235,.3);cursor:pointer;transition:transform .1s}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
+
+/* CODE PREVIEW */
+.code-block{background:var(--code-bg);padding:16px 18px;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.75;overflow-x:auto;color:#94a3b8;border-top:1px solid var(--border);max-height:320px;overflow-y:auto}
+.code-block .kw{color:#c084fc}
+.code-block .fn{color:#60a5fa}
+.code-block .num{color:#fb923c}
+.code-block .cm{color:#475569}
+.code-block .st{color:#34d399}
+.code-block .op{color:#e2e8f0}
+.code-label{background:var(--code-bg);border-top:1px solid var(--border);padding:9px 18px;display:flex;align-items:center;justify-content:space-between;font-size:11.5px;color:#475569;font-family:'JetBrains Mono',monospace}
+.code-label span{color:#64748b}
+
+/* RUN BUTTON */
+.run-btn{width:100%;padding:14px 20px;background:var(--accent);color:#fff;border:none;border-radius:var(--r);font-family:'Inter',sans-serif;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;transition:all .15s;box-shadow:0 2px 8px rgba(37,99,235,.25);letter-spacing:-.1px}
+.run-btn:hover:not(:disabled){background:var(--accent-h);transform:translateY(-1px);box-shadow:0 4px 14px rgba(37,99,235,.35)}
+.run-btn:disabled{background:#9ca3af;box-shadow:none;cursor:not-allowed;transform:none}
+.run-btn.connecting{background:#6366f1}
+.run-btn.running{background:var(--green)}
+.run-btn.error{background:var(--red)}
+.run-btn.stopping{background:var(--yellow)}
+
+/* PROGRESS / TERMINAL */
+.term-wrap{margin-top:14px;display:none}
+.term-wrap.show{display:block}
+.term{background:var(--code-bg);border-radius:var(--r);padding:14px 16px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#94a3b8;min-height:80px;max-height:180px;overflow-y:auto}
+.tl{margin-bottom:2px}
+.tl.ok{color:#4ade80}
+.tl.err{color:#f87171}
+.tl.info{color:#60a5fa}
+.tl.warn{color:#fbbf24}
+
+/* WIRING TABLE */
+.wire-table{width:100%;border-collapse:collapse;font-size:13.5px}
+.wire-table th{text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);padding:0 12px 8px;border-bottom:1px solid var(--border)}
+.wire-table td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+.wire-table tr:last-child td{border-bottom:none}
+.wire-table tr:hover td{background:var(--bg)}
+.pin{font-family:'JetBrains Mono',monospace;font-size:12.5px;font-weight:500;color:var(--accent)}
+.pin-warn{color:var(--red);font-weight:700}
+
+/* FAQ */
+.faq-list{display:flex;flex-direction:column;gap:8px}
+.faq-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)}
+.faq-q{width:100%;padding:14px 18px;background:none;border:none;font-family:'Inter',sans-serif;font-size:14px;font-weight:500;color:var(--text);cursor:pointer;display:flex;justify-content:space-between;align-items:center;text-align:left;transition:background .12s}
+.faq-q:hover{background:var(--bg)}
+.faq-chev{font-size:11px;color:var(--muted);transition:transform .2s;flex-shrink:0}
+.faq-q.open .faq-chev{transform:rotate(180deg)}
+.faq-a{padding:0 18px 14px;font-size:13.5px;color:var(--sub);display:none;line-height:1.6}
+.faq-a.open{display:block}
+
+/* FOOTER */
+footer{border-top:1px solid var(--border);padding:2rem 1.5rem;max-width:700px;margin:0 auto;font-size:13px;color:var(--sub);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+
+/* SPINNER */
+.spin{display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-l"><div class="topbar-dot"></div>ESP32 NRF24 Jammer</div>
+  <div class="badge" id="conn-badge">Web Serial · Chrome / Edge only</div>
+</div>
+
+<div class="page">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="version-chip">v2.0 · MicroPython · web runner</div>
+    <h1>ESP32 NRF24 <span>Jammer</span></h1>
+    <p>Configure channels and power level in the browser. Click <strong>Run on ESP32</strong> and the code injects directly into your device — no compiling, no uploading files.</p>
+  </div>
+
+  <div class="callout tip">
+    <span>💡</span>
+    <div><strong>How this works —</strong> The jammer code runs as Python on MicroPython firmware. You flash MicroPython once (one click via the official installer), then this page injects and runs the code directly over USB — every time, instantly.</div>
+  </div>
+  <div class="callout warn">
+    <span>⚠️</span>
+    <div><strong>Legal —</strong> Use only on hardware you own. RF jamming is illegal in most countries when used on devices you do not own.</div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <div class="section">
+    <div class="section-title">How it works</div>
+    <div class="steps-list">
+      <div class="step-item">
+        <div class="step-num">1</div>
+        <div class="step-t"><strong>One-time setup:</strong> Flash MicroPython to your ESP32 using the <a href="https://micropython.org/download/ESP32_GENERIC/" target="_blank">official web installer ↗</a>. Takes 30 seconds. Never needed again.</div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">2</div>
+        <div class="step-t"><strong>Configure:</strong> Choose mode and adjust settings below. The jammer code updates live in the browser.</div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">3</div>
+        <div class="step-t"><strong>Run:</strong> Plug in your ESP32, click <strong>Run on ESP32</strong>, select the port — jammer starts immediately. Press EN on the ESP32 to stop.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONFIGURE & RUN -->
+  <div class="section">
+    <div class="section-title">Configure &amp; Run</div>
+
+    <div class="card">
+      <div class="card-body">
+
+        <!-- MODE -->
+        <div style="font-size:13px;font-weight:500;color:var(--sub);margin-bottom:10px">Mode</div>
+        <div class="mode-grid">
+          <button class="mode-opt active" onclick="setMode('official',this)">
+            <span class="mt">⚡ Official</span>
+            <span class="md">Max PA · Full band 2–79 · Production</span>
+          </button>
+          <button class="mode-opt" onclick="setMode('test',this)">
+            <span class="mt">🔬 Test</span>
+            <span class="md">Low PA · Narrow 37–55 · Safe testing</span>
+          </button>
+        </div>
+
+        <!-- RUN BUTTON -->
+        <button class="run-btn" id="run-btn" onclick="doRun()">
+          <span id="rbi">▶</span><span id="rbt">Run on ESP32</span>
+        </button>
+
+        <!-- TERMINAL -->
+        <div class="term-wrap" id="term-wrap">
+          <div class="term" id="term"></div>
+        </div>
+      </div>
+
+      <!-- CODE PREVIEW -->
+      <div class="code-label">
+        <span style="color:#60a5fa;font-weight:600">jammer.py</span>
+        <span id="code-summary">CH 2→79 · STEP 2 · PA MAX · REINIT 30s</span>
+      </div>
+      <div class="code-block" id="code-block"></div>
+
+      <!-- ADVANCED -->
+      <button class="adv-toggle" onclick="toggleAdv()">
+        <span id="adv-chev" style="font-size:11px">▶</span> Advanced settings
+      </button>
+      <div class="adv-body" id="adv-body">
+        <div class="adv-grid">
+          <div>
+            <div class="sl">
+              <div class="sl-row"><span class="sl-name">Min Channel</span><span class="sl-val" id="v-min">2</span></div>
+              <input type="range" id="s-min" min="0" max="79" value="2" step="1" oninput="update()">
+            </div>
+            <div class="sl">
+              <div class="sl-row"><span class="sl-name">Max Channel</span><span class="sl-val" id="v-max">79</span></div>
+              <input type="range" id="s-max" min="1" max="125" value="79" step="1" oninput="update()">
+            </div>
+            <div class="sl">
+              <div class="sl-row"><span class="sl-name">Hop Step</span><span class="sl-val" id="v-step">2</span></div>
+              <input type="range" id="s-step" min="1" max="10" value="2" step="1" oninput="update()">
+            </div>
+          </div>
+          <div>
+            <div class="sl">
+              <div class="sl-row"><span class="sl-name">PA Level</span><span class="sl-val" id="v-pa">MAX</span></div>
+              <input type="range" id="s-pa" min="0" max="3" value="3" step="1" oninput="update()">
+            </div>
+            <div class="sl">
+              <div class="sl-row"><span class="sl-name">Reinit (s)</span><span class="sl-val" id="v-ri">30</span></div>
+              <input type="range" id="s-ri" min="10" max="120" value="30" step="5" oninput="update()">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout info">
+      <span>ℹ️</span>
+      <div>To stop the jammer, press the <strong>EN / Reset button</strong> on your ESP32 board. Then click <strong>Disconnect</strong> in the browser.</div>
+    </div>
+  </div>
+
+  <!-- WIRING -->
+  <div class="section">
+    <div class="section-title">Wiring</div>
+    <div class="card">
+      <table class="wire-table">
+        <thead><tr><th>NRF24 Pin</th><th>ESP32 GPIO</th><th>Signal</th></tr></thead>
+        <tbody>
+          <tr><td>VCC</td><td class="pin-warn">3.3V only!</td><td style="color:var(--sub);font-size:13px">Never 5V</td></tr>
+          <tr><td>GND</td><td class="pin">GND</td><td style="color:var(--sub);font-size:13px">Ground</td></tr>
+          <tr><td>CE</td><td class="pin">GPIO 5</td><td style="color:var(--sub);font-size:13px">Chip Enable</td></tr>
+          <tr><td>CSN</td><td class="pin">GPIO 13</td><td style="color:var(--sub);font-size:13px">Chip Select</td></tr>
+          <tr><td>SCK</td><td class="pin">GPIO 18</td><td style="color:var(--sub);font-size:13px">SPI Clock</td></tr>
+          <tr><td>MISO</td><td class="pin">GPIO 19</td><td style="color:var(--sub);font-size:13px">Master In</td></tr>
+          <tr><td>MOSI</td><td class="pin">GPIO 23</td><td style="color:var(--sub);font-size:13px">Master Out</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- FAQ -->
+  <div class="section">
+    <div class="section-title">FAQ</div>
+    <div class="faq-list">
+      <div class="faq-item">
+        <button class="faq-q" onclick="faq(this)">Why MicroPython instead of Arduino?<span class="faq-chev">▼</span></button>
+        <div class="faq-a">Arduino requires compiling C++ code — browsers can't do that. MicroPython is a Python interpreter that runs on the ESP32. Since Python code doesn't need compiling, we can write and send it directly from the browser over USB, making the whole thing work without any local tools.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="faq(this)">How do I flash MicroPython?<span class="faq-chev">▼</span></button>
+        <div class="faq-a">Go to <a href="https://micropython.org/download/ESP32_GENERIC/" target="_blank">micropython.org/download/ESP32_GENERIC</a>, click "Install" on the latest firmware — it uses the same Web Serial API and takes about 30 seconds. You only do this once.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="faq(this)">My device doesn't show up in the port list<span class="faq-chev">▼</span></button>
+        <div class="faq-a">Use a data-capable USB cable (not charge-only). Install the CP2102 or CH340 driver for your OS. Close any other apps using the serial port.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="faq(this)">The NRF24 doesn't seem to be jamming<span class="faq-chev">▼</span></button>
+        <div class="faq-a">Add a 100µF capacitor across the NRF24's VCC and GND pins. Check all wiring. Make sure VCC is 3.3V only. Move the ESP32 closer to the target device — the onboard antenna has a short range.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="faq(this)">Can I flash from mobile?<span class="faq-chev">▼</span></button>
+        <div class="faq-a">No. Web Serial API is desktop Chrome / Edge only.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <span>ESP32 NRF24 Jammer · For personal research use only</span>
+  <a href="https://github.com/ujwal47-halcyon" target="_blank">github.com/ujwal47-halcyon</a>
+</footer>
+
+<script>
+// ── RF_SETUP values per PA level (CONT_WAVE|PLL_LOCK|2Mbps|PA)
+// Bit7=CONT_WAVE, Bit4=PLL_LOCK, Bit3=RF_DR_HIGH, Bits2:1=RF_PWR
+const RF_SETUP = [0x98, 0x9A, 0x9C, 0x9E]; // MIN, LOW, HIGH, MAX
+const PA_LABELS = ['MIN','LOW','HIGH','MAX'];
+
+let port      = null;
+let reader    = null;
+let writer    = null;
+let running   = false;
+let advOpen   = false;
+
+// ── Code generation ───────────────────────────────────────
+function getCfg() {
+  return {
+    minCh: parseInt(document.getElementById('s-min').value),
+    maxCh: parseInt(document.getElementById('s-max').value),
+    step:  parseInt(document.getElementById('s-step').value),
+    pa:    parseInt(document.getElementById('s-pa').value),
+    ri:    parseInt(document.getElementById('s-ri').value),
+  };
+}
+
+function genCode(cfg) {
+  const rfSetup = RF_SETUP[cfg.pa];
+  const startCh = Math.floor((cfg.minCh + cfg.maxCh) / 2);
+  return `\
+import machine, time
+
+# ── NRF24 SPI setup (CE=5, CSN=13, SPI1) ──────────────────
+spi = machine.SPI(1, baudrate=4000000, polarity=0, phase=0,
+                  sck=machine.Pin(18), mosi=machine.Pin(23),
+                  miso=machine.Pin(19))
+ce  = machine.Pin(5,  machine.Pin.OUT, value=0)
+csn = machine.Pin(13, machine.Pin.OUT, value=1)
+
+def wr(reg, *vals):
+    csn(0)
+    spi.write(bytes([0x20 | reg] + list(vals)))
+    csn(1)
+
+def set_ch(ch):
+    wr(0x05, ch & 0x7F)
+
+# ── Config ─────────────────────────────────────────────────
+MIN_CH = ${cfg.minCh}
+MAX_CH = ${cfg.maxCh}
+STEP   = ${cfg.step}
+REINIT = ${cfg.ri * 1000}  # ms
+
+# ── Init NRF24 continuous carrier ─────────────────────────
+wr(0x00, 0x72)          # CONFIG: PWR_UP, TX, no CRC
+wr(0x01, 0x00)          # EN_AA:  disable auto-ack
+wr(0x02, 0x00)          # EN_RXADDR
+wr(0x03, 0x01)          # SETUP_AW: 3-byte address
+wr(0x04, 0x00)          # SETUP_RETR: no retransmit
+wr(0x06, ${`0x${rfSetup.toString(16).toUpperCase()}`})  # RF_SETUP: CONT_WAVE|PLL_LOCK|2Mbps|PA_${PA_LABELS[cfg.pa]}
+set_ch(${startCh})
+time.sleep_ms(5)
+ce(1)                   # TX continuous carrier active
+
+# ── Channel hop ────────────────────────────────────────────
+ch  = MIN_CH
+d   = 1
+t0  = time.ticks_ms()
+
+while True:
+    set_ch(ch)
+    ch += STEP * d
+    if ch >= MAX_CH: d = -1
+    elif ch <= MIN_CH: d = 1
+
+    # Periodic reinit
+    if time.ticks_diff(time.ticks_ms(), t0) >= REINIT:
+        ce(0)
+        wr(0x00, 0x72)
+        wr(0x06, ${`0x${rfSetup.toString(16).toUpperCase()}`})
+        set_ch(ch)
+        time.sleep_ms(2)
+        ce(1)
+        t0 = time.ticks_ms()
+`;
+}
+
+function syntaxHL(code) {
+  return code
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/(#[^\n]*)/g,'<span class="cm">$1</span>')
+    .replace(/\b(import|from|while|if|elif|else|def|return|True|False|None)\b/g,'<span class="kw">$1</span>')
+    .replace(/\b(machine|SPI|Pin|time)\b/g,'<span class="fn">$1</span>')
+    .replace(/\b(0x[0-9A-Fa-f]+|\b\d+)\b/g,'<span class="num">$1</span>');
+}
+
+function update() {
+  const cfg = getCfg();
+  document.getElementById('v-min').textContent  = cfg.minCh;
+  document.getElementById('v-max').textContent  = cfg.maxCh;
+  document.getElementById('v-step').textContent = cfg.step;
+  document.getElementById('v-pa').textContent   = PA_LABELS[cfg.pa];
+  document.getElementById('v-ri').textContent   = cfg.ri;
+  document.getElementById('code-summary').textContent =
+    `CH ${cfg.minCh}→${cfg.maxCh} · STEP ${cfg.step} · PA ${PA_LABELS[cfg.pa]} · REINIT ${cfg.ri}s`;
+  document.getElementById('code-block').innerHTML = syntaxHL(genCode(cfg));
+}
+
+// ── Mode presets ──────────────────────────────────────────
+function setMode(m, btn) {
+  document.querySelectorAll('.mode-opt').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if (m==='official'){ sv('s-min',2);  sv('s-max',79); sv('s-pa',3); sv('s-ri',30); }
+  else               { sv('s-min',37); sv('s-max',55); sv('s-pa',1); sv('s-ri',15); }
+  update();
+}
+function sv(id,v){ document.getElementById(id).value=v; }
+
+function toggleAdv(){
+  advOpen=!advOpen;
+  document.getElementById('adv-body').classList.toggle('open',advOpen);
+  document.getElementById('adv-chev').textContent=advOpen?'▼':'▶';
+}
+
+// ── Terminal ──────────────────────────────────────────────
+function tshow(){ document.getElementById('term-wrap').classList.add('show'); }
+function tlog(msg,type=''){
+  tshow();
+  const t=document.getElementById('term');
+  const d=document.createElement('div');
+  d.className='tl '+type; d.textContent='› '+msg; t.appendChild(d); t.scrollTop=t.scrollHeight;
+}
+
+// ── Button states ─────────────────────────────────────────
+function setBtn(cls,text,icon='▶',spin=false){
+  const btn=document.getElementById('run-btn');
+  btn.className='run-btn '+cls;
+  btn.disabled=(cls==='connecting');
+  document.getElementById('rbt').textContent=text;
+  document.getElementById('rbi').innerHTML=spin?'<span class="spin"></span>':icon;
+}
+
+function setBadge(on,label=''){
+  const b=document.getElementById('conn-badge');
+  b.className='badge'+(on?' green':'');
+  b.textContent=on?label:'Web Serial · Chrome / Edge only';
+}
+
+// ── Serial helpers ────────────────────────────────────────
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+async function sendRaw(data){
+  const w=port.writable.getWriter();
+  await w.write(typeof data==='string'?new TextEncoder().encode(data):data);
+  w.releaseLock();
+}
+
+async function readUntil(target,timeoutMs=3000){
+  const r=port.readable.getReader();
+  let buf=''; const dec=new TextDecoder();
+  const timer=setTimeout(()=>r.cancel(),timeoutMs);
+  try{
+    while(true){
+      const{value,done}=await r.read();
+      if(done) break;
+      buf+=dec.decode(value);
+      if(buf.includes(target)) break;
+    }
+  }catch(e){}
+  clearTimeout(timer); r.releaseLock(); return buf;
+}
+
+// ── Main run flow ─────────────────────────────────────────
+async function doRun(){
+  // If already running — disconnect
+  if(running || port){
+    tlog('Disconnecting...');
+    running=false;
+    try{ if(port) await port.close(); }catch(e){}
+    port=null; setBtn('','Run on ESP32'); setBadge(false); return;
+  }
+
+  if(!('serial' in navigator)){
+    tlog('Web Serial not supported — use Chrome or Edge.','err'); tshow(); return;
+  }
+
+  try{
+    setBtn('connecting','Connecting...',null,true);
+    tlog('Requesting serial port...');
+
+    port=await navigator.serial.requestPort();
+    await port.open({baudRate:115200});
+    tlog('Port opened','ok');
+    setBadge(true,'Connected — running');
+
+    // ── Step 1: interrupt any running code ────────────────
+    tlog('Interrupting ESP32...');
+    await sendRaw('\x03');           // Ctrl+C
+    await sleep(300);
+    await sendRaw('\x03');
+    await sleep(300);
+
+    // ── Step 2: enter raw REPL ────────────────────────────
+    tlog('Entering raw REPL...');
+    await sendRaw('\x01');           // Ctrl+A
+    const rawPrompt=await readUntil('>',2000);
+    if(!rawPrompt.includes('raw REPL')){
+      // Maybe MicroPython not flashed
+      tlog('Raw REPL not detected. Is MicroPython installed?','warn');
+      tlog('Flash MicroPython first: micropython.org/download/ESP32_GENERIC','info');
+    }
+
+    // ── Step 3: send jammer code ──────────────────────────
+    tlog('Injecting jammer code...');
+    const code=genCode(getCfg());
+    await sendRaw(code);
+    await sendRaw('\x04');           // Ctrl+D → execute
+
+    // Read 'OK' acknowledgement
+    const ack=await readUntil('OK',2000);
+    if(ack.includes('OK')){
+      tlog('Code accepted — jammer is running!','ok');
+    } else {
+      tlog('Unexpected response: '+ack.substring(0,80),'warn');
+    }
+
+    running=true;
+    setBtn('running','Running — click to disconnect','■');
+    tlog('Press EN on ESP32 to stop the jammer.','info');
+
+  }catch(err){
+    const msg=err.message||String(err);
+    if(!msg.toLowerCase().includes('cancel')){
+      tlog('Error: '+msg,'err');
+    }
+    setBtn('','Run on ESP32');
+    setBadge(false);
+    running=false;
+    if(port){ try{await port.close();}catch(e){} port=null; }
+  }
+}
+
+// ── FAQ ───────────────────────────────────────────────────
+function faq(btn){
+  const a=btn.nextElementSibling;
+  const open=a.classList.contains('open');
+  document.querySelectorAll('.faq-a').forEach(x=>x.classList.remove('open'));
+  document.querySelectorAll('.faq-q').forEach(x=>x.classList.remove('open'));
+  if(!open){ a.classList.add('open'); btn.classList.add('open'); }
+}
+
+// ── Init ──────────────────────────────────────────────────
+update();
+</script>
+</body>
+</html>
